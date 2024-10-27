@@ -1,17 +1,15 @@
-import { Pool } from "pg";
-import { Kysely, PostgresDialect } from "kysely";
+import { Kysely } from "kysely";
+import postgres from "postgres";
+import { PostgresJSDialect } from "kysely-postgres-js";
 import { DB } from "@/types/db";
 
-const dialect = new PostgresDialect({
-  pool: new Pool({
-    database: process.env.DATABASE_DATABASE,
-    host: process.env.DATABASE_HOST,
-    user: process.env.DATABASE_USER,
-    port: 5434,
-    max: 10,
-  }),
-});
+if (!process.env.DATABASE_URL_NON_POOLING) {
+  throw new Error("DATABASE_URL_NON_POOLING is not set");
+}
 
+const pg = postgres(process.env.DATABASE_URL_NON_POOLING);
 export const db = new Kysely<DB>({
-  dialect,
+  dialect: new PostgresJSDialect({
+    postgres: pg,
+  }),
 });

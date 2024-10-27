@@ -10,14 +10,9 @@ import Link from "next/link";
 import { findDistrictCourt } from "@/app/handlers/findDistrictCourt";
 import { useDistrictFuzzySearch } from "@/app/handlers/useDistrictFuzzySearch";
 import { safeEncodeUrl } from "@/app/handlers/urlEncodersDecoders";
+import { Court as CourtType } from "@/types/db";
 
-export const CourtSearch = ({
-  districtCourts,
-  stats,
-}: {
-  districtCourts: GetCourtsResponse["courtsData"]["districtCourts"];
-  stats: GetCourtsResponse["stats"];
-}) => {
+export const CourtSearch = ({ courtsData }: { courtsData: CourtType[] }) => {
   const geoSearchProvider = new OpenStreetMapProvider({
     params: {
       "accept-language": "pl",
@@ -58,7 +53,7 @@ export const CourtSearch = ({
   };
 
   const fuzzySearchResults = useDistrictFuzzySearch({
-    districtCourts,
+    courtsData,
     searchParams,
   });
 
@@ -73,11 +68,6 @@ export const CourtSearch = ({
           <h1 className="text-3xl font-bold text-gray-800 mb-3">
             Wyszukiwarka Sądów Właściwych
           </h1>
-          <h3 className="text-xl text-gray-500 mb-6">
-            {stats?.total} sądów w bazie, w tym {stats.courts?.districtCourts}{" "}
-            sądów rejonowych, {stats.courts?.regionalCourts} okręgowych i{" "}
-            {stats.courts?.appealCourts} apelacyjnych.
-          </h3>
           <div className="flex flex-col md:flex-row items-center justify-center">
             <input
               value={geoSearchString}
@@ -142,10 +132,8 @@ export const CourtSearch = ({
             {districtCourtFiltered.map(
               ({ item, highlightCourtData, highlightCourtName }) => (
                 <Link
-                  key={item.fullCourtName}
-                  href={`/wyszukuwarka-sadow/sad/${safeEncodeUrl(
-                    item.fullCourtName
-                  )}`}
+                  key={item.name}
+                  href={`/wyszukuwarka-sadow/sad/${safeEncodeUrl(item.name)}`}
                 >
                   <Court
                     court={item}
@@ -160,12 +148,10 @@ export const CourtSearch = ({
       )}
       {!searchParams && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 p-4 mx-auto">
-          {districtCourts.map((item) => (
+          {courtsData.map((item) => (
             <Link
-              key={item.fullCourtName}
-              href={`/wyszukuwarka-sadow/sad/${safeEncodeUrl(
-                item.fullCourtName
-              )}`}
+              key={item.name}
+              href={`/wyszukuwarka-sadow/sad/${safeEncodeUrl(item.name)}`}
             >
               <Court court={item} />
             </Link>

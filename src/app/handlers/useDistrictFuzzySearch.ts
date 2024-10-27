@@ -1,14 +1,14 @@
-import { GetCourtsResponse } from "@/app/server-actions/getCourts";
+import { Court as CourtType } from "@/types/db";
 import { useFuzzySearchList } from "@nozbe/microfuzz/react";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
 import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { useMemo } from "react";
 
 export const useDistrictFuzzySearch = ({
-  districtCourts,
+  courtsData,
   searchParams,
 }: {
-  districtCourts: GetCourtsResponse["courtsData"]["districtCourts"];
+  courtsData: CourtType[];
   searchParams: SearchResult<RawResult> | undefined;
 }) => {
   const searchParamsTyped = searchParams?.raw as unknown as {
@@ -48,9 +48,9 @@ export const useDistrictFuzzySearch = ({
   }, [searchParamsTyped]);
 
   const districtCourtBroadDataFiltered = useFuzzySearchList({
-    list: districtCourts,
+    list: courtsData,
     queryText: districtCourtBroadQueryText,
-    getText: (item) => [item.courtData],
+    getText: (item) => [item.description],
     mapResultItem: ({ item, score, matches: [highlightRanges] }) => ({
       item,
       highlightRanges,
@@ -59,9 +59,9 @@ export const useDistrictFuzzySearch = ({
   });
 
   const districtCourtNarrowDataFiltered = useFuzzySearchList({
-    list: districtCourts,
+    list: courtsData,
     queryText: districtCourtNarrowQueryText,
-    getText: (item) => [item.courtData],
+    getText: (item) => [item.description],
     mapResultItem: ({ item, score, matches: [highlightRanges] }) => ({
       item,
       highlightRanges,
@@ -70,9 +70,9 @@ export const useDistrictFuzzySearch = ({
   });
 
   const districtCourtBroadNameFiltered = useFuzzySearchList({
-    list: districtCourts,
+    list: courtsData,
     queryText: districtCourtBroadQueryText,
-    getText: (item) => [item.fullCourtName],
+    getText: (item) => [item.name],
     mapResultItem: ({ item, score, matches: [highlightRanges] }) => ({
       item,
       highlightRanges,
@@ -81,9 +81,9 @@ export const useDistrictFuzzySearch = ({
   });
 
   const districtCourtNarrowNameFiltered = useFuzzySearchList({
-    list: districtCourts,
+    list: courtsData,
     queryText: districtCourtNarrowQueryText,
-    getText: (item) => [item.fullCourtName],
+    getText: (item) => [item.name],
     mapResultItem: ({ item, score, matches: [highlightRanges] }) => ({
       item,
       highlightRanges,

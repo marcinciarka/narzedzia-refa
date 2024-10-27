@@ -13,14 +13,15 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 
 export interface Court {
   address: string | null;
+  appeal: string | null;
   city: string | null;
   courttype: Courttype;
   description: string | null;
+  district: string | null;
   email: string | null;
   id: Generated<number>;
   iscommercial: boolean | null;
   ismortgage: boolean | null;
-  jurisdiction: number | null;
   name: string;
   phone: string | null;
   postalcode: string | null;

@@ -1,8 +1,8 @@
-import { CourtsData } from "@/app/server-actions/getCourts";
+import { Court as CourtType } from "@/types/db";
 import { HighlightRanges } from "@nozbe/microfuzz";
 
 type ListType = {
-  item: CourtsData[number];
+  item: CourtType;
   highlightRanges: HighlightRanges | null;
   score: number;
 }[];
@@ -31,7 +31,7 @@ export function findDistrictCourt({
     }
   >();
   districtCourtBroadNameFiltered.forEach(({ highlightRanges, score, item }) => {
-    merged.set(item.fullCourtName, {
+    merged.set(item.name, {
       item,
       highlightCourtName: highlightRanges,
       titleScore: score,
@@ -39,7 +39,7 @@ export function findDistrictCourt({
   });
   districtCourtNarrowNameFiltered.forEach(
     ({ highlightRanges, score, item }) => {
-      merged.set(item.fullCourtName, {
+      merged.set(item.name, {
         item,
         highlightCourtName: highlightRanges,
         titleScore: score,
@@ -47,8 +47,8 @@ export function findDistrictCourt({
     }
   );
   districtCourtBroadDataFiltered.forEach(({ highlightRanges, score, item }) => {
-    const existing = merged.get(item.fullCourtName);
-    merged.set(item.fullCourtName, {
+    const existing = merged.get(item.name);
+    merged.set(item.name, {
       item,
       highlightCourtData: highlightRanges,
       highlightCourtName: existing?.highlightCourtName,
@@ -58,8 +58,8 @@ export function findDistrictCourt({
   });
   districtCourtNarrowDataFiltered.forEach(
     ({ highlightRanges, score, item }) => {
-      const existing = merged.get(item.fullCourtName);
-      merged.set(item.fullCourtName, {
+      const existing = merged.get(item.name);
+      merged.set(item.name, {
         item,
         highlightCourtData: highlightRanges,
         highlightCourtName: existing?.highlightCourtName,
