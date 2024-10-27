@@ -1,14 +1,13 @@
 import { db } from "@/app/server-actions/db";
 import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
-import { sql } from "kysely";
 
 export const searchDistrictCourts = async ({
   searchParams,
 }: {
   searchParams: SearchResult<RawResult>;
 }) => {
-  const parsedDisplayName = searchParams.raw.display_name
+  const _parsedDisplayName = searchParams.raw.display_name
     .replaceAll(",", "")
     .replaceAll("gmina", "")
     .replaceAll("powiat", "")
@@ -20,6 +19,7 @@ export const searchDistrictCourts = async ({
     .split(" ")
     .filter((word) => word.length > 2)
     .join(" ");
+  console.log("_parsedDisplayName", _parsedDisplayName);
 
   try {
     const courtsData = await db
