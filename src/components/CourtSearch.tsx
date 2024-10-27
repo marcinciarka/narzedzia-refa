@@ -1,122 +1,47 @@
 "use client";
 
-import { Court } from "@/components/Court";
-import { useMemo, useState } from "react";
-import { OpenStreetMapProvider } from "leaflet-geosearch";
+import { useEffect, useState } from "react";
 import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
-import { GetCourtsResponse } from "@/app/server-actions/getCourts";
-import Link from "next/link";
-import { findDistrictCourt } from "@/app/handlers/findDistrictCourt";
-import { useDistrictFuzzySearch } from "@/app/handlers/useDistrictFuzzySearch";
-import { safeEncodeUrl } from "@/app/handlers/urlEncodersDecoders";
-import { Court as CourtType } from "@/types/db";
+import { CourtSearchBar } from "@/components/CourtSearchBar";
 
-export const CourtSearch = ({ courtsData }: { courtsData: CourtType[] }) => {
-  const geoSearchProvider = new OpenStreetMapProvider({
-    params: {
-      "accept-language": "pl",
-      countrycodes: "pl",
-      format: "geojson",
-      addressdetails: 1,
-    },
-  });
+export const CourtSearch = () => {
+  const [districtCourtSearchParams, setDistrictCourtSearchParams] =
+    useState<SearchResult<RawResult>>();
   const [geoSearchResults, setGeoSearchResults] = useState<
     SearchResult<RawResult>[]
   >([]);
-  const [geoSearchString, setGeoSearchString] = useState("");
-  const [searchParams, setSearchParams] = useState<SearchResult<RawResult>>();
-  const handleSearchUpdate = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGeoSearchString(e.target.value);
-    if (searchParams) {
-      setGeoSearchResults([]);
-      setSearchParams(undefined);
+
+  useEffect(() => {
+    console.log("districtCourtSearchParams", districtCourtSearchParams);
+    if (districtCourtSearchParams) {
+      fetch("/api/search-district-court", {
+        method: "POST",
+        body: JSON.stringify(districtCourtSearchParams),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+        });
     }
-  };
-  const handleReset = async () => {
-    setSearchParams(undefined);
-    setGeoSearchResults([]);
-    setGeoSearchString("");
-  };
-  const handleSearch = async () => {
-    const geoSearchResultsTemp = await geoSearchProvider.search({
-      query: geoSearchString,
-    });
-    setGeoSearchResults(geoSearchResultsTemp);
-    if (geoSearchResultsTemp.length > 0) {
-      setSearchParams(geoSearchResultsTemp[0]);
-    }
-  };
-
-  const handleSetSearchParams = (params: SearchResult<RawResult>) => {
-    setSearchParams(params);
-  };
-
-  const fuzzySearchResults = useDistrictFuzzySearch({
-    courtsData,
-    searchParams,
-  });
-
-  const districtCourtFiltered = useMemo(() => {
-    return findDistrictCourt(fuzzySearchResults);
-  }, [fuzzySearchResults]);
+  }, [districtCourtSearchParams]);
 
   return (
     <>
-      <div className="flex justify-center mt-10">
+      <div className="flex justify-center mt-2">
         <div className="text-center rounded-lg p-6 w-full md:w-[80%]">
-          <h1 className="text-3xl font-bold text-gray-800 mb-3">
+          <h1 className="text-3xl font-bold text-gray-800 mb-9">
             Wyszukiwarka Sądów Właściwych
           </h1>
-          <div className="flex flex-col md:flex-row items-center justify-center">
-            <input
-              value={geoSearchString}
-              onChange={handleSearchUpdate}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              type="text"
-              placeholder="Szukaj (kod pocztowy, adres, miejscowość, etc)"
-              className="w-full border border-gray-300 rounded-lg px-5 py-4 focus:outline-none focus:ring focus:ring-blue-500 size-lg"
-            />
-            <button
-              className="bg-blue-500 w-full md:w-auto mt-2 md:mt-0 text-white rounded-lg px-6 py-4 ml-0 md:ml-2"
-              onClick={handleSearch}
-            >
-              Szukaj
-            </button>
-            <button
-              className="bg-red-500 w-full md:w-auto text-white mt-2 md:mt-0  ml-0 md:ml-2 rounded-lg px-6 py-4 ml-2"
-              onClick={handleReset}
-            >
-              Reset
-            </button>
-          </div>
-          {geoSearchResults.length > 0 && (
-            <div className="mt-4">
-              <p className="text-gray-500 mb-3">
-                Znaleziono {geoSearchResults.length} miejsc dla &quot;
-                {geoSearchString}
-                &quot;
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto">
-                {geoSearchResults.map((result) => (
-                  <button
-                    key={result.raw.place_id}
-                    className={`w-full p-2 border hover:bg-gray-100 rounded-lg mb-2 text-sm ${
-                      result.raw.place_id === searchParams?.raw.place_id
-                        ? "border-blue-500 text-blue-500"
-                        : "border-gray-200"
-                    }`}
-                    onClick={() => handleSetSearchParams(result)}
-                  >
-                    <p>{result.label.replace(", Polska", "").trim()}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <CourtSearchBar
+            geoSearchResults={geoSearchResults}
+            setGeoSearchResults={setGeoSearchResults}
+            districtCourtSearchParams={districtCourtSearchParams}
+            setDistrictCourtSearchParams={setDistrictCourtSearchParams}
+          />
         </div>
       </div>
-      {!!searchParams && (
+      {/* {!!searchParams && (
         <>
           <p className="text-center text-gray-600 font-bold">
             Wybierz sąd rejonowy.
@@ -157,7 +82,7 @@ export const CourtSearch = ({ courtsData }: { courtsData: CourtType[] }) => {
             </Link>
           ))}
         </div>
-      )}
+      )} */}
     </>
   );
 };
