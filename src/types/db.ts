@@ -25,6 +25,7 @@ export interface Court {
   name: string;
   phone: string | null;
   postalcode: string | null;
+  state: string | null;
   website: string | null;
 }
 

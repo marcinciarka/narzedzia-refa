@@ -2,10 +2,7 @@ import { db } from "@/app/server-actions/db";
 import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
 import { sql } from "kysely";
-import createFuzzySearch, {
-  FuzzyMatches,
-  FuzzySearcher,
-} from "@nozbe/microfuzz";
+import createFuzzySearch, { FuzzyMatches } from "@nozbe/microfuzz";
 
 export const searchDistrictCourts = async ({
   searchParams,
@@ -41,34 +38,38 @@ export const searchDistrictCourts = async ({
     village;
 
   const searchTermLevelTwo =
-    city || suburb || quarter || neighbourhood || town || village;
+    village || town || neighbourhood || quarter || suburb || city;
 
   const searchTermLevelThree =
     suburb || quarter || neighbourhood || town || village;
 
   const searchTerms = [
-    ...new Set([searchLevelOne, searchTermLevelTwo, searchTermLevelThree]),
+    ...new Set([searchTermLevelThree, searchTermLevelTwo, searchLevelOne]),
   ].filter(Boolean);
 
   try {
+    const tsQuery = `ts_rank_cd(to_tsvector(court.name || ' ' || court.description), to_tsquery("'${searchTerms.join(
+      " | "
+    )}'")) DESC`;
     const distructCourtSearchResults = await db
       .withSchema("public")
       .selectFrom("court")
       .selectAll()
       .where((eb) => eb("court.courttype", "=", "rejonowy"))
-      .where(({ eb, or }) =>
-        or([
+      .where(({ eb, or }) => {
+        const searches = [
           ...searchTerms.map((term) => eb("court.name", "@@", term)),
           ...searchTerms.map((term) => eb("court.description", "@@", term)),
-          eb("court.name", "ilike", searchTerms[0]),
-          eb("court.description", "ilike", searchTerms[0]),
-        ])
-      )
+          ...searchTerms.map((term) => eb("court.city", "@@", term)),
+          ...searchTerms.map((term) => eb("court.name", "ilike", term)),
+          ...searchTerms.map((term) => eb("court.description", "ilike", term)),
+          ...searchTerms.map((term) => eb("court.city", "ilike", term)),
+        ];
+        return or([...searches]);
+      })
       .orderBy(
         // order search results by relevance
-        sql`ts_rank_cd(to_tsvector(court.name || ' ' || court.description), to_tsquery(${searchTerms.join(
-          " | "
-        )})) DESC`
+        sql`${tsQuery}`
       )
       .execute();
 
@@ -114,6 +115,7 @@ export const searchDistrictCourts = async ({
       message: "",
     };
   } catch (message) {
+    console.log("error", message);
     return {
       distructCourtSearchResults: [],
       searchTerms,
