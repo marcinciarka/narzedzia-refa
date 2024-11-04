@@ -27,12 +27,11 @@ export const CourtSearch = () => {
         .then((res) => res.json())
         .then(
           (data: {
-            distructCourtSearchResults: CourtType[];
+            districtCourtSearchResults: CourtType[];
             searchTerms: string[];
           }) => {
-            console.log("data", data);
-            if (data.distructCourtSearchResults) {
-              setDistrictCourtSearchResults(data.distructCourtSearchResults);
+            if (data.districtCourtSearchResults) {
+              setDistrictCourtSearchResults(data.districtCourtSearchResults);
             }
           }
         );

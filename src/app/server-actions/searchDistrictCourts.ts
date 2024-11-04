@@ -25,6 +25,7 @@ export const searchDistrictCourts = async ({
   const neighbourhood = typedAddressParams.address.neighbourhood;
   const town = typedAddressParams.address.town;
   const village = typedAddressParams.address.village;
+  const state = typedAddressParams.address.state;
 
   const searchLevelOne =
     district ||
@@ -47,23 +48,34 @@ export const searchDistrictCourts = async ({
     ...new Set([searchTermLevelThree, searchTermLevelTwo, searchLevelOne]),
   ].filter(Boolean);
 
+  const courtSearchQuery = db
+    .withSchema("public")
+    .selectFrom("court")
+    .selectAll()
+    .where((eb) => eb("court.courttype", "=", "rejonowy"))
+    .where((eb) => eb("court.state", "=", state.replace("województwo ", "")));
+
   try {
-    const tsQuery = `ts_rank_cd(to_tsvector(court.name || ' ' || court.description), to_tsquery("'${searchTerms.join(
+    const tsQuery = `ts_rank_cd(to_tsvector(court.description), to_tsquery("'${searchTerms.join(
       " | "
     )}'")) DESC`;
-    const distructCourtSearchResults = await db
-      .withSchema("public")
-      .selectFrom("court")
-      .selectAll()
-      .where((eb) => eb("court.courttype", "=", "rejonowy"))
+    const districtCourtStrictSearch = await courtSearchQuery
       .where(({ eb, or }) => {
         const searches = [
-          ...searchTerms.map((term) => eb("court.name", "@@", term)),
-          ...searchTerms.map((term) => eb("court.description", "@@", term)),
-          ...searchTerms.map((term) => eb("court.city", "@@", term)),
-          ...searchTerms.map((term) => eb("court.name", "ilike", term)),
-          ...searchTerms.map((term) => eb("court.description", "ilike", term)),
-          ...searchTerms.map((term) => eb("court.city", "ilike", term)),
+          ...searchTerms.map((term) =>
+            eb("court.name", "@@", `to_tsquery("'${term}'")`)
+          ),
+          ...searchTerms.map((term) =>
+            eb("court.description", "@@", `to_tsquery("'${term}'")`)
+          ),
+          ...searchTerms.map(
+            (term) => eb("court.city", "@@", `to_tsquery("'${term}'")`),
+            ...searchTerms.map((term) => eb("court.name", "ilike", term)),
+            ...searchTerms.map((term) =>
+              eb("court.description", "ilike", term)
+            ),
+            ...searchTerms.map((term) => eb("court.city", "ilike", term))
+          ),
         ];
         return or([...searches]);
       })
@@ -73,13 +85,37 @@ export const searchDistrictCourts = async ({
       )
       .execute();
 
+    const districtCourtSearchResults =
+      districtCourtStrictSearch.length >= 1
+        ? districtCourtStrictSearch
+        : await courtSearchQuery
+            .where(({ eb, or }) => {
+              const searches = [
+                ...searchTerms.map((term) =>
+                  eb("court.description", "ilike", term)
+                ),
+                ...searchTerms.map((term) =>
+                  eb("court.description", "@@", term)
+                ),
+              ];
+              return or([...searches]);
+            })
+            .orderBy(
+              // order search results by relevance
+              sql`${tsQuery}`
+            )
+            .execute();
+
+    // console.log("districtCourtStrictSearch", districtCourtStrictSearch);
+    // console.log("districtCourtSearchResults", districtCourtSearchResults);
+
     const descriptionHighlightsSearch = createFuzzySearch(
-      distructCourtSearchResults,
+      districtCourtSearchResults,
       {
         key: "description",
       }
     );
-    const nameHighlightsSearch = createFuzzySearch(distructCourtSearchResults, {
+    const nameHighlightsSearch = createFuzzySearch(districtCourtSearchResults, {
       key: "name",
     });
 
@@ -90,24 +126,23 @@ export const searchDistrictCourts = async ({
       nameHighlightsSearch(term)
     );
 
-    const prepareHighlight = (test: typeof descriptionHighlightsRaw) => {
-      return (
-        test
-          .reduce((acc, val) => acc.concat(val), [])
-          .filter(({ score }) => score < 1)
-          // map id: matches
-          .reduce((acc, { item, matches }) => {
-            acc[item.id] = matches;
-            return acc;
-          }, {} as Record<number, FuzzyMatches>)
-      );
-    };
+    console.log("descriptionHighlightsRaw", descriptionHighlightsRaw);
+
+    const prepareHighlight = (searchResults: typeof descriptionHighlightsRaw) =>
+      searchResults
+        .reduce((acc, val) => acc.concat(val), [])
+        .filter(({ score }) => score < 1.2 && score > 0.2)
+        // map id: matches
+        .reduce((acc, { item, matches }) => {
+          acc[item.id] = matches;
+          return acc;
+        }, {} as Record<number, FuzzyMatches>);
 
     const descriptionHighlights = prepareHighlight(descriptionHighlightsRaw);
     const nameHighlights = prepareHighlight(nameHighlightsRaw);
 
     return {
-      distructCourtSearchResults,
+      districtCourtSearchResults,
       descriptionHighlights,
       nameHighlights,
       searchTerms,
@@ -117,7 +152,7 @@ export const searchDistrictCourts = async ({
   } catch (message) {
     console.log("error", message);
     return {
-      distructCourtSearchResults: [],
+      districtCourtSearchResults: [],
       searchTerms,
       error: true,
       message,

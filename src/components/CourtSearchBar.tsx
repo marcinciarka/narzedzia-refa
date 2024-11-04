@@ -10,7 +10,7 @@ const geoSearchProvider = new OpenStreetMapProvider({
   params: {
     "accept-language": "pl",
     countrycodes: "pl",
-    format: "jsonv2",
+    format: "geojson",
     addressdetails: 1,
     layer: "address",
     dedupe: 1,
