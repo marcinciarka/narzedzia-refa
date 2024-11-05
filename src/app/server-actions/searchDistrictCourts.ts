@@ -2,7 +2,7 @@ import { db } from "@/app/server-actions/db";
 import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
 import { sql } from "kysely";
-import createFuzzySearch, { FuzzyMatches } from "@nozbe/microfuzz";
+import createFuzzySearch, { HighlightRanges } from "@nozbe/microfuzz";
 
 export const searchDistrictCourts = async ({
   searchParams,
@@ -85,7 +85,7 @@ export const searchDistrictCourts = async ({
       )
       .execute();
 
-    const districtCourtSearchResults =
+    const districtCourts =
       districtCourtStrictSearch.length >= 1
         ? districtCourtStrictSearch
         : await courtSearchQuery
@@ -106,16 +106,10 @@ export const searchDistrictCourts = async ({
             )
             .execute();
 
-    // console.log("districtCourtStrictSearch", districtCourtStrictSearch);
-    // console.log("districtCourtSearchResults", districtCourtSearchResults);
-
-    const descriptionHighlightsSearch = createFuzzySearch(
-      districtCourtSearchResults,
-      {
-        key: "description",
-      }
-    );
-    const nameHighlightsSearch = createFuzzySearch(districtCourtSearchResults, {
+    const descriptionHighlightsSearch = createFuzzySearch(districtCourts, {
+      key: "description",
+    });
+    const nameHighlightsSearch = createFuzzySearch(districtCourts, {
       key: "name",
     });
 
@@ -126,23 +120,21 @@ export const searchDistrictCourts = async ({
       nameHighlightsSearch(term)
     );
 
-    console.log("descriptionHighlightsRaw", descriptionHighlightsRaw);
-
     const prepareHighlight = (searchResults: typeof descriptionHighlightsRaw) =>
       searchResults
         .reduce((acc, val) => acc.concat(val), [])
-        .filter(({ score }) => score < 1.2 && score > 0.2)
+        .filter(({ score }) => score < 1.5 && score > 0.1)
         // map id: matches
         .reduce((acc, { item, matches }) => {
-          acc[item.id] = matches;
+          acc[item.id] = matches as HighlightRanges[];
           return acc;
-        }, {} as Record<number, FuzzyMatches>);
+        }, {} as Record<number, HighlightRanges[]>);
 
     const descriptionHighlights = prepareHighlight(descriptionHighlightsRaw);
     const nameHighlights = prepareHighlight(nameHighlightsRaw);
 
     return {
-      districtCourtSearchResults,
+      districtCourts,
       descriptionHighlights,
       nameHighlights,
       searchTerms,
@@ -152,7 +144,7 @@ export const searchDistrictCourts = async ({
   } catch (message) {
     console.log("error", message);
     return {
-      districtCourtSearchResults: [],
+      districtCourts: [],
       searchTerms,
       error: true,
       message,

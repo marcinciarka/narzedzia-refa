@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "dotenv -e .env -e .env.development.local -- next dev",
+    "build": "dotenv -e .env -e .env.development.local -- next build",
+    "start": "dotenv -e .env -e .env.development.local -- next start",
+    "lint": "dotenv -e .env -e .env.development.local -- next lint",
     "codegen": "kysely-codegen --dialect postgres --env-file ./.env.development.local --out-file ./src/types/db.ts"
   },
   "dependencies": {
@@ -16,6 +16,8 @@
     "@vercel/postgres": "^0.10.0",
     "@vercel/postgres-kysely": "^0.10.0",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.4.2",
     "fuse.js": "^7.0.0",
     "kysely-postgres-js": "^2.0.0",
     "leaflet-geosearch": "^4.0.0",

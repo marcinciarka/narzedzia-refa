@@ -21,8 +21,8 @@ export const Court = ({
   onClick,
 }: {
   court: CourtType;
-  highlightCourtName?: HighlightRanges | null;
-  highlightCourtData?: HighlightRanges | null;
+  highlightCourtName?: HighlightRanges;
+  highlightCourtData?: HighlightRanges;
   active?: boolean;
   superActive?: boolean;
   uncertain?: boolean;
@@ -135,7 +135,7 @@ export const Court = ({
       className={clsx(
         "max-w-full h-full relative bg-white shadow-sm hover:shadow-xl transition-shadow",
         "hover:border-gray-300 transition-border",
-        "rounded-lg p-6 overflow-hidden",
+        "rounded-lg p-6 pt-4 overflow-hidden",
         "bg-gradient-to-br to-60%",
         gradientClass,
         active || superActive ? activeClass : "border-gray-100",
@@ -146,8 +146,10 @@ export const Court = ({
     >
       {icon}
       <h2
-        className={clsx("text-xl font-bold mb-2 relative z-2", accentTextClass)}
+        className={clsx("text-xl font-bold relative mb-2 z-2", accentTextClass)}
       >
+        <small className="text-xs font-bold mb-2">{court.state}</small>
+        <br />
         {highlightCourtName ? (
           <Highlight
             className={clsx("font-bold p-0.5", highlightTextClass)}
@@ -157,7 +159,7 @@ export const Court = ({
           />
         ) : (
           court.name
-        )}{" "}
+        )}
       </h2>
       {uncertainIcon}
       {comercialIcon}
