@@ -113,11 +113,13 @@ export const searchDistrictCourts = async ({
       key: "name",
     });
 
-    const descriptionHighlightsRaw = searchTerms.map((term) =>
-      descriptionHighlightsSearch(term)
+    const highlightTerms = searchTerms.map((term) => term.split(" ")).flat();
+
+    const descriptionHighlightsRaw = highlightTerms.map((term) =>
+      descriptionHighlightsSearch(`${term} `)
     );
-    const nameHighlightsRaw = searchTerms.map((term) =>
-      nameHighlightsSearch(term)
+    const nameHighlightsRaw = highlightTerms.map((term) =>
+      nameHighlightsSearch(`${term} `)
     );
 
     const prepareHighlight = (searchResults: typeof descriptionHighlightsRaw) =>
