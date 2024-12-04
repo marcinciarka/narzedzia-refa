@@ -1,6 +1,5 @@
 import { searchCourtsByDistrictCourt } from "@/app/server-actions/searchCourtsByDistrictCourt";
 import { Court } from "@/components/Court";
-import Link from "next/link";
 
 type CourtPageProps = {
   params: {
