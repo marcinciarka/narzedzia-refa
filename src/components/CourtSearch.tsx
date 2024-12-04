@@ -5,7 +5,6 @@ import { SearchResult } from "leaflet-geosearch/dist/providers/provider.js";
 import { RawResult } from "leaflet-geosearch/dist/providers/openStreetMapProvider.js";
 import { CourtSearchBar } from "@/components/CourtSearchBar";
 import { Court as CourtType } from "@/types/db";
-import { safeEncodeUrl } from "@/app/handlers/urlEncodersDecoders";
 import Link from "next/link";
 import { Court } from "@/components/Court";
 import { SearchDistrictCourtResult } from "@/types/search-district-court";
@@ -16,11 +15,14 @@ export const CourtSearch = () => {
   const [geoSearchResults, setGeoSearchResults] = useState<
     SearchResult<RawResult>[]
   >([]);
+  const [loadingSearchResults, setLoadingSearchResults] = useState(false);
   const [districtCourtSearchResults, setDistrictCourtSearchResults] =
     useState<SearchDistrictCourtResult>();
 
   useEffect(() => {
     if (districtCourtSearchParams) {
+      setDistrictCourtSearchResults(undefined);
+      setLoadingSearchResults(true);
       fetch("/api/search-district-court", {
         method: "POST",
         body: JSON.stringify(districtCourtSearchParams),
@@ -30,9 +32,13 @@ export const CourtSearch = () => {
           if (data) {
             setDistrictCourtSearchResults(data);
           }
+        })
+        .finally(() => {
+          setLoadingSearchResults(false);
         });
     } else {
       setDistrictCourtSearchResults(undefined);
+      setLoadingSearchResults(false);
     }
   }, [districtCourtSearchParams]);
 
@@ -58,15 +64,20 @@ export const CourtSearch = () => {
           />
         </div>
       </div>
+      {loadingSearchResults && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 p-4">
+          <Court loading />
+          <Court loading />
+          <Court loading />
+        </div>
+      )}
       {!!districtCourtSearchResults &&
         districtCourtSearchResults.districtCourts && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 p-4">
             {districtCourtSearchResults.districtCourts.map((districtCourt) => (
               <Link
                 key={districtCourt.name}
-                href={`/wyszukuwarka-sadow/sad/${safeEncodeUrl(
-                  districtCourt.name
-                )}`}
+                href={`/wyszukuwarka-sadow/sad/${districtCourt.id}`}
               >
                 <Court
                   court={districtCourt as unknown as CourtType}

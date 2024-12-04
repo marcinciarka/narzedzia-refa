@@ -44,66 +44,66 @@ export const searchDistrictCourts = async ({
   const searchTermLevelThree =
     suburb || quarter || neighbourhood || town || village;
 
-  const searchTerms = [
+  const searchTermsToHighlight = [
     ...new Set([searchTermLevelThree, searchTermLevelTwo, searchLevelOne]),
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
+
+  const searchTerms = [
+    ...new Set([
+      searchTermLevelThree
+        ? `%${searchTermLevelThree.slice(0, -1).toLowerCase()}%`
+        : false,
+      searchTermLevelTwo
+        ? `%${searchTermLevelTwo.slice(0, -1).toLowerCase()}%`
+        : false,
+      searchLevelOne ? `%${searchLevelOne.slice(0, -1).toLowerCase()}%` : false,
+    ]),
+  ].filter(Boolean) as string[];
 
   const courtSearchQuery = db
     .withSchema("public")
     .selectFrom("court")
     .selectAll()
-    .where((eb) => eb("court.courttype", "=", "rejonowy"))
-    .where((eb) => eb("court.state", "=", state.replace("województwo ", "")));
+    .where((eb) => eb("court.courttype", "=", "rejonowy"));
 
   try {
     const tsQuery = `ts_rank_cd(to_tsvector(court.description), to_tsquery("'${searchTerms.join(
       " | "
     )}'")) DESC`;
     const districtCourtStrictSearch = await courtSearchQuery
-      .where(({ eb, or }) => {
-        const searches = [
-          ...searchTerms.map((term) =>
-            eb("court.name", "@@", `to_tsquery("'${term}'")`)
-          ),
-          ...searchTerms.map((term) =>
-            eb("court.description", "@@", `to_tsquery("'${term}'")`)
-          ),
-          ...searchTerms.map(
-            (term) => eb("court.city", "@@", `to_tsquery("'${term}'")`),
-            ...searchTerms.map((term) => eb("court.name", "ilike", term)),
-            ...searchTerms.map((term) =>
-              eb("court.description", "ilike", term)
-            ),
-            ...searchTerms.map((term) => eb("court.city", "ilike", term))
-          ),
-        ];
-        return or([...searches]);
-      })
+      .where((eb) => eb("court.state", "=", state.replace("województwo ", "")))
+      .where(({ eb, or }) =>
+        or([
+          ...searchTerms.map((term) => eb("court.name", "ilike", term)),
+          ...searchTerms.map((term) => eb("court.description", "ilike", term)),
+        ])
+      )
       .orderBy(
         // order search results by relevance
         sql`${tsQuery}`
       )
+      .limit(9)
       .execute();
 
     const districtCourts =
       districtCourtStrictSearch.length >= 1
         ? districtCourtStrictSearch
         : await courtSearchQuery
-            .where(({ eb, or }) => {
-              const searches = [
+            .where(({ eb, or }) =>
+              or([
                 ...searchTerms.map((term) =>
                   eb("court.description", "ilike", term)
                 ),
                 ...searchTerms.map((term) =>
                   eb("court.description", "@@", term)
                 ),
-              ];
-              return or([...searches]);
-            })
+              ])
+            )
             .orderBy(
               // order search results by relevance
               sql`${tsQuery}`
             )
+            .limit(9)
             .execute();
 
     const descriptionHighlightsSearch = createFuzzySearch(districtCourts, {
@@ -113,7 +113,9 @@ export const searchDistrictCourts = async ({
       key: "name",
     });
 
-    const highlightTerms = searchTerms.map((term) => term.split(" ")).flat();
+    const highlightTerms = searchTermsToHighlight
+      .map((term) => term.split(" "))
+      .flat();
 
     const descriptionHighlightsRaw = highlightTerms.map((term) =>
       descriptionHighlightsSearch(`${term} `)
@@ -125,7 +127,7 @@ export const searchDistrictCourts = async ({
     const prepareHighlight = (searchResults: typeof descriptionHighlightsRaw) =>
       searchResults
         .reduce((acc, val) => acc.concat(val), [])
-        .filter(({ score }) => score < 1.5 && score > 0.1)
+        .filter(({ score }) => score < 2.5 && score > 0.1)
         // map id: matches
         .reduce((acc, { item, matches }) => {
           acc[item.id] = matches as HighlightRanges[];
@@ -141,10 +143,10 @@ export const searchDistrictCourts = async ({
       nameHighlights,
       searchTerms,
       error: false,
+      strictSearch: districtCourtStrictSearch.length >= 1,
       message: "",
     };
   } catch (message) {
-    console.log("error", message);
     return {
       districtCourts: [],
       searchTerms,
