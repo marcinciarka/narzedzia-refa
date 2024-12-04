@@ -1,3 +1,3 @@
 export default async function CourtSearch() {
-  return <>kalkulator</>;
+  return <>kalkulator rekompensaty za koszty odzyskiwania należności</>;
 }
