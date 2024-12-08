@@ -8,9 +8,9 @@ import Link from "next/link";
 
 export function SidebarHeader() {
   return (
-    <div className="mt-24 mb-12 flex flex-col text-center items-center justify-center bg-slate-700">
+    <div className="mt-24 mb-12 flex flex-col text-center items-center justify-center">
       <Link href="/">
-        <h1 className="text-white text-3xl font-bold mb-12 relative group">
+        <h1 className="text-3xl font-bold mb-12 relative group">
           Narzędzia
           <br />
           Referendarza

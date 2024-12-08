@@ -8,16 +8,16 @@ export const itemsList = [
     link: "/wyszukuwarka-sadow",
   },
   {
-    title: "Kalkulator czegostam",
+    title: "Kalkulator rekompensaty",
     icon: <IconCalculator />,
-    link: "/kalkulator",
+    link: "/kalkulator-rekompensaty",
   },
 ];
 
 const style = {
   inactive: "text-gray-400",
-  active: "font-medium text-white",
-  link: "flex items-center justify-start p-3 text-sm w-full hover:text-white",
+  active: "font-medium",
+  link: "btn btn-ghost flex items-center justify-start p-3 text-sm w-full",
 };
 
 export function SidebarItems() {
@@ -26,10 +26,10 @@ export function SidebarItems() {
       {itemsList.map((item) => (
         <li key={item.title}>
           <Link href={item.link}>
-            <span className={style.link}>
-              <span>{item.icon}</span>
-              <span className="mx-4">{item.title}</span>
-            </span>
+            <button className={style.link}>
+              {item.icon}
+              {item.title}
+            </button>
           </Link>
         </li>
       ))}

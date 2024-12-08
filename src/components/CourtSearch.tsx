@@ -53,9 +53,7 @@ export const CourtSearch = () => {
     <>
       <div className="flex justify-center mt-2">
         <div className="text-center rounded-lg p-6 w-full md:w-[80%]">
-          <h1 className="text-3xl font-bold text-gray-800 mb-9">
-            Wyszukiwarka Sądów
-          </h1>
+          <h1 className="text-3xl font-bold mb-9">Wyszukiwarka Sądów</h1>
           <CourtSearchBar
             geoSearchResults={geoSearchResults}
             setGeoSearchResults={setGeoSearchResults}

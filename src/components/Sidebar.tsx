@@ -13,7 +13,7 @@ const style = {
   container: "pb-32 lg:pb-12",
   open: "absolute w-8/12 z-40 sm:w-5/12",
   default:
-    "bg-slate-700 h-screen overflow-y-auto top-0 lg:flex lg:relative lg:w-64 lg:z-auto",
+    "h-screen overflow-y-auto top-0 lg:flex lg:relative lg:w-64 lg:z-auto",
 };
 
 export function Sidebar(props: SidebarProps) {

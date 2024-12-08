@@ -101,7 +101,7 @@ export const Court = ({
   const comercialIcon = court?.iscommercial ? (
     <p
       className={clsx(
-        "text-xs font-bold text-black inline-block mb-1 mr-2 px-2 py-1 rounded-lg relative z-2 leading-7",
+        "text-xs font-bold inline-block mb-1 mr-2 px-2 py-1 rounded-lg relative z-2 leading-7",
         commercialDepartmentLabelClass
       )}
     >
@@ -113,7 +113,7 @@ export const Court = ({
   const mortgageIcon = court?.ismortgage ? (
     <p
       className={clsx(
-        "text-xs font-bold text-black inline-block mb-1 mr-2 px-2 py-1 rounded-lg relative z-2 leading-7",
+        "text-xs font-bold inline-block mb-1 mr-2 px-2 py-1 rounded-lg relative z-2 leading-7",
         mortgageDepartmentLabelClass
       )}
     >
@@ -218,11 +218,13 @@ export const Court = ({
                 {court?.website}
               </a>
             </p>
-            <Link href={`/wyszukuwarka-sadow/sad/${court?.id}`}>
-              <button className="text-xs mt-6 text-blue-600">
-                <span className="font-bold">Ustaw ten sąd jako główny</span>
-              </button>
-            </Link>
+            {court?.courttype === "rejonowy" && (
+              <Link href={`/wyszukuwarka-sadow/sad/${court?.id}`}>
+                <button className="text-xs mt-6 text-blue-600">
+                  <span className="font-bold">Ustaw ten sąd jako główny</span>
+                </button>
+              </Link>
+            )}
           </div>
         )}
       </div>
