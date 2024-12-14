@@ -4,7 +4,7 @@ import { getPreviousMonthLastBusinessDay } from "@/app/helpers";
 import { Compensation, DATE_FORMAT } from "@/types/compensation";
 import { IconDeviceFloppy, IconEdit, IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export const CompensationItem = ({
   item,
@@ -21,19 +21,27 @@ export const CompensationItem = ({
   removeCompensation: (index: number) => void;
   updateCompensation: (index: number, item: Compensation) => void;
 }) => {
-  useEffect(() => {
-    if (
-      item.exchangeRateDate &&
-      !item.exchangeRate &&
-      !item.loadingExchangeRate
-    ) {
+  const [gettingExchangeRate, setGettingExchangeRate] = useState(false);
+  const updateExchangeRate = useCallback(
+    (rate: number) => {
       updateCompensation(index, {
         ...item,
-        loadingExchangeRate: true,
+        exchangeRate: rate,
       });
+    },
+    [updateCompensation, item, index]
+  );
+  useEffect(() => {
+    if (item.exchangeRateDate && !item.exchangeRate && !gettingExchangeRate) {
+      setGettingExchangeRate(true);
       console.log(
         "fetching exchange rate for date",
-        dayjs(item.exchangeRateDate).format(DATE_FORMAT)
+        dayjs(item.exchangeRateDate).format(DATE_FORMAT),
+        {
+          exchangeRateDate: item.exchangeRateDate,
+          exchangeRate: item.exchangeRate,
+          gettingExchangeRate,
+        }
       );
 
       fetch(
@@ -43,41 +51,43 @@ export const CompensationItem = ({
       )
         .then((response) => response.json())
         .then((data) => {
-          updateCompensation(index, {
-            ...item,
-            exchangeRate: data.rates[0].mid,
-            loadingExchangeRate: false,
-          });
+          setGettingExchangeRate(false);
+          updateExchangeRate(data.rates[0].mid);
+        })
+        .catch(() => {
+          setGettingExchangeRate(false);
         });
     }
   }, [
-    index,
-    item,
     item.exchangeRateDate,
-    updateCompensation,
+    item.exchangeRate,
+    gettingExchangeRate,
     compensationCurrency,
+    updateExchangeRate,
   ]);
+
   return (
     <div
       className="grid grid-cols-6 divide-x"
       key={`CompensationCalculator-${index}`}
     >
       <div className="text-center flex items-center justify-center">
-        {item.name}
+        {item.name ?? "-"}
       </div>
       <div className="text-center flex items-center justify-center">
         {dayjs(item.date).format(DATE_FORMAT)}
       </div>
       <div className="text-center flex flex-col items-center justify-center">
         {dayjs(item.exchangeRateDate).format("DD/MM/YYYY")}
-        {item.loadingExchangeRate && <span className="animate-pulse">...</span>}
-        {item.exchangeRate && (
+        {item.exchangeRate ? (
           <div>
             <p className="text-xs text-gray-500">
               1 {compensationCurrency.toUpperCase()} ={" "}
               {item.exchangeRate.toFixed(4)} PLN
             </p>
           </div>
+        ) : (
+          <span className="animate-pulse">...</span>
         )}
       </div>
       <div className="text-center flex flex-col items-center justify-center">
@@ -87,7 +97,7 @@ export const CompensationItem = ({
         PLN
       </div>
       <div className="text-center flex items-center justify-center">
-        {item.amount}
+        {item.amount ?? "-"}
       </div>
       <div className="text-center flex items-center justify-center">
         <button
